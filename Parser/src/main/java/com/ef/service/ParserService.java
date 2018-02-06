@@ -46,72 +46,20 @@ public class ParserService {
 	public void readLogFile(String fileName, Date startDate, String duration, Long threshold) throws ParseLogException {
 		
 		log.info("Reading file ... " + frService.fileName);
-		long startTime = System.currentTimeMillis();
 		Stream<String> fileStream = frService.readFileStreamImpl(fileName);
 		
-		long finalTime = System.currentTimeMillis() - startTime;
-		log.info("Reading file finished: " + finalTime + " ms.");
-		
-		startTime = System.currentTimeMillis();
 		log.info("Save logs in database ...");
-		
-		//saveLogDatabase(fileStream);
 		saveLogDatabaseBatch(fileStream);
 		
-		finalTime = System.currentTimeMillis() - startTime;
-		log.info("Save logs in database finished: " + finalTime + " ms.");
-		
-		startTime = System.currentTimeMillis();
 		log.info("Search in database ...");
-		
 		List<AccesslogModel> listSearch = searchLogDatabase(startDate, duration, threshold);
 		
-		finalTime = System.currentTimeMillis() - startTime;
-		log.info("Search in database finished: " + finalTime + " ms.");
-		
-		startTime = System.currentTimeMillis();
 		log.info("Save search logs in database");
-		
 		saveSearchLogDatabaseBatch(listSearch);
 		
-		finalTime = System.currentTimeMillis() - startTime;
-		log.info("Save search logs in database finished: " + finalTime + " ms.");
 		
 	}
 
-	private void saveLogDatabase(Stream<String> fileStream) {
-		DateFormat format = new SimpleDateFormat(Constants.FORMATDATEDB);
-		
-		List<AccesslogModel> listModel = new ArrayList<AccesslogModel>();
-		
-		fileStream.map(line -> line.split("\\|"))
-			.forEach(line -> {
-						
-				try {
-					AccesslogModel lineLog = new AccesslogModel(
-							format.parse(line[0]),
-							line[1],
-							line[2],
-							line[3],
-							line[4]);
-					
-					//accesslogRepository.save(lineLog);
-					listModel.add(lineLog);	
-					if (listModel.size() > register_batch) {
-						accesslogRepository.save(listModel);
-						accesslogRepository.flush();
-						listModel.clear();
-					}
-				} catch (ParseException ex) {
-					log.error(ex.getMessage());
-				}
-				
-			});	
-		
-		accesslogRepository.save(listModel);
-		accesslogRepository.flush();
-	}
-	
 	private void saveLogDatabaseBatch(Stream<String> fileStream) {
 		DateFormat format = new SimpleDateFormat(Constants.FORMATDATEDB);
 		
